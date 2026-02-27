@@ -9,6 +9,8 @@ import torch
 from pinecone import Pinecone
 from pinecone import ServerlessSpec
 from transformers import BitsAndBytesConfig
+from huggingface_hub import InferenceClient
+import streamlit as st
 
 pc = Pinecone(api_key="pcsk_42FVuS_8pBZ6qCiTdPnoXfrxfhK59QJYmWS2nW4UVvDiqcbALMBrwRfnzDQm3Qfb2DARDQ")
 index_name = "chatbot"
@@ -70,12 +72,16 @@ dialog_queries = []
 
 class QwenChatbot:
     def __init__(self, model= "Qwen/Qwen3-8B"):
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model,
+        self.client = InferenceClient(
+            model="Qwen/Qwen3-8B",
+            token=st.secrets["HF_TOKEN"],
             quantization_config=quantization_config,
             device_map="auto" 
         )
-        self.model = self.model.to(device)
+        #self.model = AutoModelForCausalLM.from_pretrained(
+            #model,
+        
+        #self.model = self.model.to(device)
         self.history = []
         self.tokenizer = AutoTokenizer.from_pretrained(model)
 
@@ -93,7 +99,7 @@ class QwenChatbot:
         )
 
         inputs = self.tokenizer(texts, prompt, return_tensors="pt").to(device)
-        response_ids = self.model.generate(**inputs, 
+        response_ids = self.client.generate(**inputs, 
                                            max_new_tokens=80, 
                                            do_sample=True, 
                                            temperature=0.7, 
