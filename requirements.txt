@@ -4,6 +4,4 @@ numpy
 pinecone
 sentence-transformers
 transformers
-torch
-bitsandbytes
-accelerate
+torch==2.2.0+cpu
