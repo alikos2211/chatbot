@@ -12,7 +12,7 @@ from transformers import BitsAndBytesConfig
 from huggingface_hub import InferenceClient
 import streamlit as st
 
-pc = Pinecone(api_key="pcsk_42FVuS_8pBZ6qCiTdPnoXfrxfhK59QJYmWS2nW4UVvDiqcbALMBrwRfnzDQm3Qfb2DARDQ")
+pc = Pinecone(api_key=st.secrets["PINECONE_API_KEY"])
 index_name = "chatbot"
 
 if not pc.has_index(index_name):
@@ -57,7 +57,9 @@ for i, (embedding, text) in enumerate(zip(wiki_emb, loaded_array)):
     })
 
 # 2. Upsert to the index in batches (Pinecone recommends batches of ~100)
-index.upsert(vectors=data_to_upsert)
+if "vectors_uploaded" not in st.session_state:
+    index.upsert(vectors=data_to_upsert)
+    st.session_state["vectors_uploaded"] = True
 
 #print(f"Successfully uploaded {len(data_to_upsert)} vectors to Pinecone.")
 
@@ -71,52 +73,41 @@ user_input = ""
 dialog_queries = [] 
 
 class QwenChatbot:
-    def __init__(self, model= "Qwen/Qwen3-8B"):
+    def __init__(self):
         self.client = InferenceClient(
-            model="Qwen/Qwen3-8B",
+            model="Qwen/Qwen2.5-7B-Instruct",   # better supported
             token=st.secrets["HF_TOKEN"],
-            quantization_config=quantization_config,
-            device_map="auto" 
         )
-        #self.model = AutoModelForCausalLM.from_pretrained(
-            #model,
-        
-        #self.model = self.model.to(device)
         self.history = []
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
 
-    def generate_response(self, user_input):
-        messages = self.history + [
-            {"role": "user", "content": user_input},
-            
-                              ]
-        
+    def generate_response(self, user_input, system_prompt):
 
-        texts = self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ] + self.history + [
+            {"role": "user", "content": user_input}
+        ]
+
+        response = self.client.chat_completion(
+            messages=messages,
+            max_tokens=150,
+            temperature=0.7,
         )
 
-        inputs = self.tokenizer(texts, prompt, return_tensors="pt").to(device)
-        response_ids = self.client.generate(**inputs, 
-                                           max_new_tokens=80, 
-                                           do_sample=True, 
-                                           temperature=0.7, 
-                                           top_p=0.9)[0][len(inputs.input_ids[0]):].tolist()
-        response = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+        answer = response.choices[0].message["content"]
 
-        # Update history
+        # Save history
         self.history.append({"role": "user", "content": user_input})
-        self.history.append({"role": "assistant", "content": response})
+        self.history.append({"role": "assistant", "content": answer})
 
-        return response
+        return answer
 
 if __name__ == "__main__":
     chatbot = QwenChatbot()
 
 while (user_input != "Stop"):
-    user_input = input("Enter message: ")
+    
+    user_input = st.chat_input("Ask something")
 
     query_emb = model_emb.encode(user_input)
     query_vector = query_emb.tolist()
@@ -138,7 +129,7 @@ while (user_input != "Stop"):
     )
  
 
-    bot_response = chatbot.generate_response(user_input)
+    bot_response = chatbot.generate_response(user_input, prompt)
  
     print("Answer:", bot_response)
     #print(chatbot.history)
