@@ -12,6 +12,8 @@ from transformers import BitsAndBytesConfig
 from huggingface_hub import InferenceClient
 import streamlit as st
 
+
+
 pc = Pinecone(api_key=st.secrets["PINECONE_API_KEY"])
 index_name = "chatbot"
 
@@ -38,7 +40,6 @@ quantization_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_compute_dtype=torch.float16
 )
-
 
 
 
@@ -107,29 +108,35 @@ if __name__ == "__main__":
 
 while (user_input != "Stop"):
     
-    user_input = st.chat_input("Ask something")
+    st.title("Chatbot")
 
-    query_emb = model_emb.encode(user_input)
-    query_vector = query_emb.tolist()
+user_input = st.chat_input("Enter message")
 
-    # Query Pinecone (similarity)
+if user_input:   # <-- THIS IS REQUIRED
+    # Now it's safe
+
+    query_emb = model_emb.encode([user_input]) # also better to pass as list
+    query_vector = query_emb[0].tolist()
+
     results = index.query(
-    vector=query_vector,
-    top_k=1,
-    include_metadata=True
+        vector=query_vector,
+        top_k=1,
+        include_metadata=True
     )
-    # Get the context from the top result
-    if results['matches']:
-        retrieved_context = results['matches'][0]['metadata']['text']
+
+    if results["matches"]:
+        retrieved_context = results["matches"][0]["metadata"]["text"]
     else:
         retrieved_context = "No relevant context found."
 
     prompt = system_prompt_template.format(
-        context=retrieved_context,
+        context=retrieved_context
     )
- 
 
     bot_response = chatbot.generate_response(user_input, prompt)
+
+    st.write("**Answer:**")
+    st.write(bot_response)
  
     print("Answer:", bot_response)
     #print(chatbot.history)
