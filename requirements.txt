@@ -4,4 +4,4 @@ numpy
 pinecone
 sentence-transformers
 transformers
-torch==2.2.0+cpu
+torch==2.10.0
