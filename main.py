@@ -103,21 +103,25 @@ class QwenChatbot:
 
         return answer
 
-if __name__ == "__main__":
-    chatbot = QwenChatbot()
+st.title("Chatbot")
 
-while (user_input != "Stop"):
-    
-    st.title("Chatbot")
+# Load chatbot once
+@st.cache_resource
+def load_chatbot():
+    return QwenChatbot()
 
+chatbot = load_chatbot()
+
+# Chat input
 user_input = st.chat_input("Enter message")
 
-if user_input:   # <-- THIS IS REQUIRED
-    # Now it's safe
+if user_input:
 
-    query_emb = model_emb.encode([user_input]) # also better to pass as list
+    # Embed query
+    query_emb = model_emb.encode([user_input])
     query_vector = query_emb[0].tolist()
 
+    # Retrieve from Pinecone
     results = index.query(
         vector=query_vector,
         top_k=1,
@@ -129,17 +133,19 @@ if user_input:   # <-- THIS IS REQUIRED
     else:
         retrieved_context = "No relevant context found."
 
+    # Build prompt
     prompt = system_prompt_template.format(
         context=retrieved_context
     )
 
+    # Generate response
     bot_response = chatbot.generate_response(user_input, prompt)
 
+    # Display
     st.write("**Answer:**")
     st.write(bot_response)
- 
-    print("Answer:", bot_response)
-    #print(chatbot.history)
+
+
 
 
     
