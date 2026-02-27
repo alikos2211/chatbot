@@ -1,2 +1,18 @@
-PyYAML
+# Web Framework
 streamlit
+
+# Data & Config
+numpy
+PyYAML
+
+# Vector Database
+pinecone-client
+
+# AI Models & Transformers
+sentence-transformers
+transformers
+torch
+
+# Quantization (Required for BitsAndBytesConfig)
+bitsandbytes
+accelerate
