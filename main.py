@@ -103,7 +103,7 @@ class QwenChatbot:
 
         return answer
 
-st.title("Chatbot")
+st.title("Олесин Чатбот")
 
 @st.cache_resource
 def load_chatbot():
