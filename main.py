@@ -125,16 +125,12 @@ for message in st.session_state.messages:
         st.write(message["content"])
 
 # Clear history button
-if st.button("🗑️ Clear Chat History"):
+if st.button("🗑️ Clear Chat History", key="clear_btn"):
     st.session_state.messages = []
     chatbot.history = []
     st.rerun()
 
-# Chat input
-user_input = st.chat_input("Enter message")
-
-# Chat input
-user_input = st.chat_input("Enter message")
+user_input = st.chat_input("Enter message", key="chat_input")
 
 if user_input:
     # Display user message immediately
