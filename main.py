@@ -111,6 +111,12 @@ def load_chatbot():
 
 chatbot = load_chatbot()
 
+# Clear history button
+if st.button("🗑️ Clear Chat History", key="clear_btn"):
+    st.session_state.messages = []
+    chatbot.history = []
+    st.rerun()
+
 # Initialize chat history in session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -119,16 +125,7 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
 
-# Clear history button
-if st.button("🗑️ Clear Chat History", key="clear_btn"):
-    st.session_state.messages = []
-    chatbot.history = []
-    st.rerun()
 
 user_input = st.chat_input("Enter message", key="chat_input")
 
