@@ -105,17 +105,41 @@ class QwenChatbot:
 
 st.title("Chatbot")
 
-# Load chatbot once
 @st.cache_resource
 def load_chatbot():
     return QwenChatbot()
 
 chatbot = load_chatbot()
 
+# Initialize chat history in session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+
+# Clear history button
+if st.button("🗑️ Clear Chat History"):
+    st.session_state.messages = []
+    chatbot.history = []
+    st.rerun()
+
+# Chat input
+user_input = st.chat_input("Enter message")
+
 # Chat input
 user_input = st.chat_input("Enter message")
 
 if user_input:
+    # Display user message immediately
+    with st.chat_message("user"):
+        st.write(user_input)
 
     # Embed query
     query_emb = model_emb.encode([user_input])
@@ -127,23 +151,24 @@ if user_input:
         top_k=1,
         include_metadata=True
     )
-
     if results["matches"]:
         retrieved_context = results["matches"][0]["metadata"]["text"]
     else:
         retrieved_context = "No relevant context found."
 
     # Build prompt
-    prompt = system_prompt_template.format(
-        context=retrieved_context
-    )
+    prompt = system_prompt_template.format(context=retrieved_context)
 
     # Generate response
     bot_response = chatbot.generate_response(user_input, prompt)
 
-    # Display
-    st.write("**Answer:**")
-    st.write(bot_response)
+    # Display bot response
+    with st.chat_message("assistant"):
+        st.write(bot_response)
+
+    # Save both messages to session state
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.messages.append({"role": "assistant", "content": bot_response})
 
 
 
